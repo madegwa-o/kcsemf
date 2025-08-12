@@ -1,9 +1,10 @@
-// lib/rag-setup.ts
+// lib/mongodb-rag.ts
 import { MongoDBAtlasVectorSearch } from "@langchain/mongodb";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { MongoClient } from "mongodb";
 import { Document } from "@langchain/core/documents";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import type { Filter } from "mongodb";
 
 // Initialize MongoDB client
 const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
@@ -57,16 +58,14 @@ export async function addDocumentsToStore(documents: Document[]) {
 /**
  * Search for similar documents with optional filtering
  */
+
 export async function searchSimilarDocuments(
     query: string,
     limit: number = 3,
-    filter?: Record<string, any>
+    filter?: Filter<Document>
 ) {
     try {
-        // MongoDB Atlas filter format
-        const mongoFilter = filter ? {
-            preFilter: filter
-        } : undefined;
+        const mongoFilter = filter ? { preFilter: filter } : undefined;
 
         const results = await vectorStore.similaritySearchWithScore(
             query,
@@ -79,6 +78,7 @@ export async function searchSimilarDocuments(
         throw error;
     }
 }
+
 
 /**
  * Delete documents from vector store
