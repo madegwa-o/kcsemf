@@ -1,6 +1,5 @@
 'use client'
 
-import ThemeToggle from '../../components/ThemeToggle'
 import { useState, useRef, useEffect } from 'react'
 import { Send, Bot, User, Loader2 } from 'lucide-react'
 
@@ -89,14 +88,10 @@ export default function Chat() {
     }
 
     return (
-        <div className="flex flex-col h-screen max-w-4xl mx-auto bg-background text-foreground">
+        <div className="flex flex-col h-screen max-w-4xl mx-auto bg-background text-foreground border-b border-border p-4">
             {/* Header */}
             <div className="flex items-center justify-between bg-background border-b border-border p-4">
-                <h1 className="text-xl font-semibold flex items-center gap-2">
-                    <Bot className="w-6 h-6" />
-                    KMF . AI
-                </h1>
-                <ThemeToggle />
+
             </div>
 
             {/* Messages */}

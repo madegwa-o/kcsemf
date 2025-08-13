@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
         // 3. Build chain
         const chain = prompt.pipe(llm).pipe(new StringOutputParser())
 
-        // 4. Run chain
+        // 4. Run chain     context,
         const answer = await chain.invoke({
             context,
             history: chatHistory,
