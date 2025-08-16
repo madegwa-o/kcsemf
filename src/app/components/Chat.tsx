@@ -12,6 +12,7 @@ interface Message {
     noContext?: boolean // Flag for when no context is found
     relevance?: string // Relevance indicator (high/medium/low)
     avgScore?: string // Average relevance score
+    dataSource?: string // Data source used (KCSE Mock Questions or RAG Knowledge Base)
 }
 
 export default function Chat() {
@@ -20,7 +21,7 @@ export default function Chat() {
             id: '1',
             role: 'assistant',
             content:
-                "Hello! I'm your RAG-powered AI assistant specialized in Kenyan education and curriculum knowledge. I can only answer questions based on my knowledge base. How can I help you today?",
+                "Hello!",
             timestamp: new Date()
         }
     ])
@@ -86,7 +87,8 @@ export default function Chat() {
                 context: data.context, // Store context if provided
                 noContext: data.noContext, // Store noContext flag
                 relevance: data.relevance, // Store relevance indicator
-                avgScore: data.avgScore // Store average relevance score
+                avgScore: data.avgScore, // Store average relevance score
+                dataSource: data.dataSource // Store data source
             }
 
             setMessages(prev => [...prev, assistantMessage])
@@ -132,16 +134,32 @@ export default function Chat() {
             {/* Help Panel */}
             {showHelp && (
                 <div className="bg-muted/50 border-b border-border p-4">
-                    <h3 className="font-medium mb-2">Available Topics in Knowledge Base:</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                        <div className="bg-background p-2 rounded border">• Kenyan Education System (8-4-4)</div>
-                        <div className="bg-background p-2 rounded border">• Competency-Based Curriculum (CBC)</div>
-                        <div className="bg-background p-2 rounded border">• Primary Education (KCPE)</div>
-                        <div className="bg-background p-2 rounded border">• Secondary Education (KCSE)</div>
-                        <div className="bg-background p-2 rounded border">• University Education</div>
-                        <div className="bg-background p-2 rounded border">• TVET & Technical Education</div>
-                        <div className="bg-background p-2 rounded border">• Education Challenges & Policies</div>
-                        <div className="bg-background p-2 rounded border">• Language Policy</div>
+                    <h3 className="font-medium mb-2">Available Data Sources:</h3>
+                    
+                    <div className="mb-4">
+                        <h4 className="font-medium text-sm mb-2 text-blue-600">📚 KCSE Mock Questions</h4>
+                        <p className="text-xs text-muted-foreground mb-2">Ask for specific questions, practice problems, or exam materials</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                            <div className="bg-background p-2 rounded border">• Mathematics Questions</div>
+                            <div className="bg-background p-2 rounded border">• English Questions</div>
+                            <div className="bg-background p-2 rounded border">• Science Questions</div>
+                            <div className="bg-background p-2 rounded border">• History Questions</div>
+                            <div className="bg-background p-2 rounded border">• Geography Questions</div>
+                            <div className="bg-background p-2 rounded border">• Business Questions</div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 className="font-medium text-sm mb-2 text-green-600">🎓 RAG Knowledge Base</h4>
+                        <p className="text-xs text-muted-foreground mb-2">Ask about general Kenyan education topics and concepts</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                            <div className="bg-background p-2 rounded border">• Kenyan Education System (8-4-4)</div>
+                            <div className="bg-background p-2 rounded border">• Competency-Based Curriculum (CBC)</div>
+                            <div className="bg-background p-2 rounded border">• Primary Education (KCPE)</div>
+                            <div className="bg-background p-2 rounded border">• Secondary Education (KCSE)</div>
+                            <div className="bg-background p-2 rounded border">• University Education</div>
+                            <div className="bg-background p-2 rounded border">• TVET & Technical Education</div>
+                        </div>
                     </div>
                 </div>
             )}
@@ -186,6 +204,11 @@ export default function Chat() {
                                                 <Info className="w-3 h-3" />
                                                 {showContext[message.id] ? 'Hide' : 'Show'} knowledge source
                                             </button>
+                                            {message.dataSource && (
+                                                <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                                                    {message.dataSource}
+                                                </span>
+                                            )}
                                             {message.relevance && (
                                                 <span className={`text-xs px-2 py-1 rounded-full ${
                                                     message.relevance === 'high' 
