@@ -1,69 +1,5 @@
 // app/api/chat/route.ts (for App Router) or pages/api/chat.ts (for Pages Router)
 
-
-
-// import { BufferMemory } from 'langchain/memory'
-// import { ConversationChain } from 'langchain/chains'
-//
-// const memory = new BufferMemory()
-// const conversation = new ConversationChain({
-//     llm,
-//     memory,
-// })
-
-// // Using Anthropic Claude
-// import { ChatAnthropic } from '@langchain/anthropic'
-//
-// const llm = new ChatAnthropic({
-//     anthropicApiKey: process.env.ANTHROPIC_API_KEY,
-//     modelName: 'claude-3-sonnet-20240229',
-// })
-//
-// // Using Google Gemini
-// import { ChatGoogleGenerativeAI } from '@langchain/google-genai'
-//
-// const llm = new ChatGoogleGenerativeAI({
-//     apiKey: process.env.GOOGLE_API_KEY,
-//     modelName: 'gemini-pro',
-// })
-
-
-//
-// // Using Groq (very fast and cheap)
-// import { ChatGroq } from '@langchain/groq'
-//
-// const llm = new ChatGroq({
-//     apiKey: process.env.GROQ_API_KEY,
-//     modelName: 'llama3-8b-8192', // Often free or very cheap
-// })
-//
-// // Using Together AI
-// import { ChatTogetherAI } from '@langchain/community/chat_models/togetherai'
-//
-// const llm = new ChatTogetherAI({
-//     apiKey: process.env.TOGETHER_AI_API_KEY,
-//     modelName: 'meta-llama/Llama-2-7b-chat-hf', // Very cheap
-// })
-
-// Using Ollama (completely free, runs locally)
-// import { ChatOllama } from '@langchain/community/chat_models/ollama'
-//
-// const llm = new ChatOllama({
-//     baseUrl: 'http://localhost:11434',
-//     model: 'mistral:latest', // Free local model
-// })
-
-
-
-
-// // Initialize the LLM (you can also use other providers like Anthropic, Google, etc.)
-// const llm = new ChatOpenAI({
-//     modelName: 'gpt-3.5-turbo', // or 'gpt-4' for better responses
-//     temperature: 0.7,
-//     openAIApiKey: process.env.OPENAI_API_KEY,
-// })
-
-
 import { NextRequest, NextResponse } from 'next/server'
 import { ChatOpenAI } from '@langchain/openai'
 import { HumanMessage, AIMessage } from '@langchain/core/messages'
@@ -71,9 +7,10 @@ import { StringOutputParser } from '@langchain/core/output_parsers'
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import {searchSimilarDocuments} from "@/lib/mongodb-rag";
 
-// Initialize the LLM (you can also use other providers like Anthropic, Google, etc.)
+// Initialize the LLM - FIXED: Changed from 'gpt-5-nano' to valid model
 const llm = new ChatOpenAI({
-    modelName: 'gpt-5-nano',
+    modelName: 'gpt-3.5-turbo', // Valid OpenAI model
+    temperature: 0.7,
     openAIApiKey: process.env.OPENAI_API_KEY,
 })
 
@@ -84,19 +21,22 @@ interface Message {
     timestamp: Date
 }
 
-// Prompt template for RAG
-const prompt = ChatPromptTemplate.fromTemplate(`
-You are a helpful AI assistant. Use the following retrieved context to answer the user's question.
+// Updated prompt template to enforce RAG-only responses
+const prompt = ChatPromptTemplate.fromMessages([
+    ['system', `You are a specialized AI assistant that ONLY answers questions based on the provided context from the RAG knowledge base. You must follow these strict rules:
 
-Context:
-{context}
+1. ONLY use information from the provided context to answer questions
+2. If the context doesn't contain enough information to answer the question, say "I can only answer based on my knowledge base, and I don't have enough information about that topic."
+3. Do NOT use any external knowledge or general information
+4. Always cite specific information from the context when answering
+5. If asked about topics not covered in the context, politely redirect to topics within your knowledge base
+6. Never make up information or use knowledge outside of what's provided in the context
 
-Conversation history:
-{history}
-
-User: {question}
-AI:
-`)
+Remember: You are a RAG-only assistant. Your responses must be grounded in the provided context.`],
+    ['placeholder', '{history}'],
+    ['human', 'Context from RAG knowledge base:\n{context}\n\nUser question: {question}'],
+    ['assistant', '']
+])
 
 export async function POST(request: NextRequest) {
     try {
@@ -109,9 +49,23 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        // Search for relevant documents in RAG knowledge base
         const results = await searchSimilarDocuments(message, 4)
-        const context = results.map(([doc]) => doc.pageContent).join('\n\n')
+        const context = results.map(([doc]) => doc.pageContent).join('\n\n') // Get document content
+        const relevanceScores = results.map(([, score]) => score) // FIXED: Get scores correctly
 
+        // If no relevant context is found, inform the user
+        if (!context.trim()) {
+            return NextResponse.json({
+                message: "I can only answer questions based on my knowledge base, and I don't have any relevant information about that topic. Please ask me about topics related to Kenyan education, curriculum, or other subjects I've been trained on.",
+                context: null,
+                noContext: true
+            })
+        }
+
+        // Calculate average relevance score
+        const avgRelevance = relevanceScores.reduce((a, b) => a + b, 0) / relevanceScores.length
+        const relevanceIndicator = avgRelevance > 0.7 ? 'high' : avgRelevance > 0.5 ? 'medium' : 'low'
 
         // Convert message history to LangChain message format
         const chatHistory = history?.slice(-10).map((msg: Message) => {
@@ -122,17 +76,22 @@ export async function POST(request: NextRequest) {
             }
         }) || []
 
-        // 3. Build chain
+        // Build chain
         const chain = prompt.pipe(llm).pipe(new StringOutputParser())
 
-        // 4. Run chain     context,
+        // Run chain with context
         const answer = await chain.invoke({
             context,
             history: chatHistory,
             question: message
         })
 
-        return NextResponse.json({ message: answer })
+        return NextResponse.json({
+            message: answer,
+            context: context, // Return context for transparency
+            relevance: relevanceIndicator, // Return relevance indicator
+            avgScore: avgRelevance.toFixed(3) // Return average relevance score
+        })
 
     } catch (error) {
         console.error('Chat API Error:', error)

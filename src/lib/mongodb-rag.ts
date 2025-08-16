@@ -99,57 +99,75 @@ export async function deleteDocuments(ids: string[]) {
 export function createSampleDocuments(): Document[] {
     return [
         {
-            pageContent: "LangChain is a framework for developing applications powered by language models. It enables applications that are data-aware and agentic, allowing them to connect with data sources and interact with their environment.",
+            pageContent: "The Kenyan education system follows the 8-4-4 structure, consisting of 8 years of primary education, 4 years of secondary education, and 4 years of university education. Primary education starts at age 6 and is free and compulsory for all children. The Kenya Certificate of Primary Education (KCPE) exam is taken at the end of primary school.",
             metadata: {
-                source: "langchain-docs",
-                type: "overview",
-                category: "framework",
-                tags: ["ai", "llm", "framework"]
+                source: "kenya-education-overview",
+                type: "system-structure",
+                category: "primary-education",
+                tags: ["kenya", "8-4-4", "primary-school", "kcpe", "education-system"]
             }
         },
         {
-            pageContent: "MongoDB Atlas Vector Search allows you to store and search over unstructured data using vector embeddings. It provides semantic search capabilities with built-in filtering and supports various similarity metrics.",
+            pageContent: "Secondary education in Kenya is divided into two cycles: Form 1-2 (lower secondary) and Form 3-4 (upper secondary). Students take the Kenya Certificate of Secondary Education (KCSE) examination at the end of Form 4. Performance in KCSE determines university admission and career pathways. The curriculum includes core subjects like Mathematics, English, Kiswahili, and Sciences.",
             metadata: {
-                source: "mongodb-docs",
-                type: "concept",
-                category: "database",
-                tags: ["database", "vector-search", "mongodb"]
+                source: "kenya-secondary-education",
+                type: "system-structure",
+                category: "secondary-education",
+                tags: ["kenya", "secondary-school", "kcse", "form-1-4", "curriculum"]
             }
         },
         {
-            pageContent: "Vector embeddings are high-dimensional numerical representations of data that capture semantic meaning. They enable similarity search by measuring distances between vectors in the embedding space.",
+            pageContent: "The Competency-Based Curriculum (CBC) was introduced in Kenya in 2017 to replace the 8-4-4 system. CBC follows a 2-6-3-3-3 structure: 2 years pre-primary, 6 years primary, 3 years junior secondary, 3 years senior secondary, and 3 years university. It focuses on developing learners' competencies, values, and skills rather than just academic knowledge.",
             metadata: {
-                source: "ai-concepts",
-                type: "definition",
-                category: "embeddings",
-                tags: ["ai", "embeddings", "vectors"]
+                source: "kenya-cbc-reform",
+                type: "curriculum-reform",
+                category: "cbc",
+                tags: ["kenya", "cbc", "competency-based", "2-6-3-3-3", "education-reform"]
             }
         },
         {
-            pageContent: "RAG (Retrieval-Augmented Generation) combines information retrieval with language generation. It retrieves relevant documents from a knowledge base and uses them as context for generating more accurate and informed responses.",
+            pageContent: "Kenya has both public and private universities. Major public universities include the University of Nairobi, Kenyatta University, Moi University, and Egerton University. Private institutions like Strathmore University, United States International University (USIU), and Africa Nazarene University also offer quality higher education. Admission is based on KCSE performance and university entrance requirements.",
             metadata: {
-                source: "ai-concepts",
-                type: "definition",
-                category: "rag",
-                tags: ["ai", "rag", "retrieval", "generation"]
+                source: "kenya-higher-education",
+                type: "institutions",
+                category: "university-education",
+                tags: ["kenya", "universities", "higher-education", "public-universities", "private-universities"]
             }
         },
         {
-            pageContent: "OpenAI's text-embedding-3-small model provides high-quality embeddings with 1536 dimensions. It's cost-effective and suitable for most semantic search applications, offering a good balance between performance and price.",
+            pageContent: "Technical and Vocational Education and Training (TVET) in Kenya provides practical skills training through polytechnics, technical institutes, and vocational training centers. TVET institutions offer certificates and diplomas in various fields including engineering, business, agriculture, and hospitality. The Kenya National Qualifications Authority (KNQA) oversees quality assurance in TVET.",
             metadata: {
-                source: "openai-docs",
-                type: "technical",
-                category: "embeddings",
-                tags: ["openai", "embeddings", "api"]
+                source: "kenya-tvet",
+                type: "vocational-training",
+                category: "tvet",
+                tags: ["kenya", "tvet", "technical-education", "polytechnics", "vocational-training"]
             }
         },
         {
-            pageContent: "Next.js is a React framework that provides server-side rendering, static site generation, and API routes. It's commonly used for building full-stack web applications with modern JavaScript.",
+            pageContent: "Education challenges in Kenya include inadequate infrastructure, teacher shortages, high dropout rates especially in arid and semi-arid regions, and gender disparities in education access. The government has implemented various initiatives including the Free Primary Education (FPE) policy, school feeding programs, and infrastructure development to address these challenges.",
             metadata: {
-                source: "nextjs-docs",
-                type: "overview",
-                category: "framework",
-                tags: ["nextjs", "react", "web-development"]
+                source: "kenya-education-challenges",
+                type: "policy-challenges",
+                category: "education-challenges",
+                tags: ["kenya", "education-challenges", "dropout-rates", "infrastructure", "gender-parity"]
+            }
+        },
+        {
+            pageContent: "The Kenya Institute of Curriculum Development (KICD) is responsible for developing and reviewing educational curricula in Kenya. It conducts research, develops learning materials, and provides guidance on curriculum implementation. KICD works closely with the Ministry of Education to ensure curricula meet national development needs and international standards.",
+            metadata: {
+                source: "kenya-kicd",
+                type: "curriculum-development",
+                category: "education-governance",
+                tags: ["kenya", "kicd", "curriculum-development", "ministry-of-education", "learning-materials"]
+            }
+        },
+        {
+            pageContent: "Kenya's education language policy emphasizes the use of mother tongue or local languages in early primary education (Classes 1-3), followed by the introduction of English and Kiswahili. English serves as the medium of instruction from Class 4 onwards, while Kiswahili is taught as a compulsory subject and serves as the national language.",
+            metadata: {
+                source: "kenya-language-policy",
+                type: "language-policy",
+                category: "education-policy",
+                tags: ["kenya", "language-policy", "english", "kiswahili", "mother-tongue", "medium-of-instruction"]
             }
         }
     ];

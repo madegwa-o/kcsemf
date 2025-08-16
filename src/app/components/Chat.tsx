@@ -1,13 +1,17 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Bot, User, Loader2 } from 'lucide-react'
+import { Send, Bot, User, Loader2, Search, Info, HelpCircle } from 'lucide-react'
 
 interface Message {
     id: string
     role: 'user' | 'assistant'
     content: string
     timestamp: Date
+    context?: string // Add context field for RAG information
+    noContext?: boolean // Flag for when no context is found
+    relevance?: string // Relevance indicator (high/medium/low)
+    avgScore?: string // Average relevance score
 }
 
 export default function Chat() {
@@ -16,12 +20,15 @@ export default function Chat() {
             id: '1',
             role: 'assistant',
             content:
-                "Hello! I'm your AI assistant powered by LangChain. How can I help you today?",
+                "Hello! I'm your RAG-powered AI assistant specialized in Kenyan education and curriculum knowledge. I can only answer questions based on my knowledge base. How can I help you today?",
             timestamp: new Date()
         }
     ])
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
+    const [isSearching, setIsSearching] = useState(false)
+    const [showContext, setShowContext] = useState<{[key: string]: boolean}>({})
+    const [showHelp, setShowHelp] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     const scrollToBottom = () => {
@@ -31,6 +38,13 @@ export default function Chat() {
     useEffect(() => {
         scrollToBottom()
     }, [messages])
+
+    const toggleContext = (messageId: string) => {
+        setShowContext(prev => ({
+            ...prev,
+            [messageId]: !prev[messageId]
+        }))
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -46,6 +60,7 @@ export default function Chat() {
         setMessages(prev => [...prev, userMessage])
         setInput('')
         setIsLoading(true)
+        setIsSearching(true)
 
         try {
             const response = await fetch('/api/chat', {
@@ -67,7 +82,11 @@ export default function Chat() {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
                 content: data.message || 'Sorry, I encountered an error.',
-                timestamp: new Date()
+                timestamp: new Date(),
+                context: data.context, // Store context if provided
+                noContext: data.noContext, // Store noContext flag
+                relevance: data.relevance, // Store relevance indicator
+                avgScore: data.avgScore // Store average relevance score
             }
 
             setMessages(prev => [...prev, assistantMessage])
@@ -84,6 +103,7 @@ export default function Chat() {
             ])
         } finally {
             setIsLoading(false)
+            setIsSearching(false)
         }
     }
 
@@ -91,8 +111,40 @@ export default function Chat() {
         <div className="flex flex-col h-screen max-w-4xl mx-auto bg-background text-foreground border-b border-border p-4">
             {/* Header */}
             <div className="flex items-center justify-between bg-background border-b border-border p-4">
-
+                <div className="flex items-center gap-2">
+                    <Bot className="w-6 h-6 text-primary" />
+                    <h1 className="text-lg font-semibold">RAG Knowledge Assistant</h1>
+                </div>
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => setShowHelp(!showHelp)}
+                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        <HelpCircle className="w-4 h-4" />
+                        Available Topics
+                    </button>
+                    <div className="text-sm text-muted-foreground">
+                        Powered by MadegwaTech • LangChain
+                    </div>
+                </div>
             </div>
+
+            {/* Help Panel */}
+            {showHelp && (
+                <div className="bg-muted/50 border-b border-border p-4">
+                    <h3 className="font-medium mb-2">Available Topics in Knowledge Base:</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                        <div className="bg-background p-2 rounded border">• Kenyan Education System (8-4-4)</div>
+                        <div className="bg-background p-2 rounded border">• Competency-Based Curriculum (CBC)</div>
+                        <div className="bg-background p-2 rounded border">• Primary Education (KCPE)</div>
+                        <div className="bg-background p-2 rounded border">• Secondary Education (KCSE)</div>
+                        <div className="bg-background p-2 rounded border">• University Education</div>
+                        <div className="bg-background p-2 rounded border">• TVET & Technical Education</div>
+                        <div className="bg-background p-2 rounded border">• Education Challenges & Policies</div>
+                        <div className="bg-background p-2 rounded border">• Language Policy</div>
+                    </div>
+                </div>
+            )}
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted">
@@ -107,7 +159,9 @@ export default function Chat() {
                             className={`max-w-xs lg:max-w-md xl:max-w-lg px-4 py-2 rounded-lg shadow-sm ${
                                 message.role === 'user'
                                     ? 'bg-primary text-primary-foreground rounded-br-none'
-                                    : 'bg-card text-card-foreground rounded-bl-none border border-border'
+                                    : message.noContext 
+                                        ? 'bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-bl-none'
+                                        : 'bg-card text-card-foreground rounded-bl-none border border-border'
                             }`}
                         >
                             <div className="flex items-start gap-2">
@@ -117,12 +171,56 @@ export default function Chat() {
                                 {message.role === 'user' && (
                                     <User className="w-4 h-4 mt-1 flex-shrink-0 text-primary-foreground/80" />
                                 )}
-                                <div>
+                                <div className="flex-1">
                                     <p className="text-sm leading-relaxed whitespace-pre-wrap">
                                         {message.content}
                                     </p>
+                                    
+                                    {/* Show context toggle for assistant messages */}
+                                    {message.role === 'assistant' && message.context && (
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <button
+                                                onClick={() => toggleContext(message.id)}
+                                                className="flex items-center gap-1 text-xs text-primary hover:text-primary/80"
+                                            >
+                                                <Info className="w-3 h-3" />
+                                                {showContext[message.id] ? 'Hide' : 'Show'} knowledge source
+                                            </button>
+                                            {message.relevance && (
+                                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                                    message.relevance === 'high' 
+                                                        ? 'bg-green-100 text-green-800' 
+                                                        : message.relevance === 'medium'
+                                                        ? 'bg-yellow-100 text-yellow-800'
+                                                        : 'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {message.relevance} relevance
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                    
+                                    {/* Display context when expanded */}
+                                    {message.role === 'assistant' && message.context && showContext[message.id] && (
+                                        <div className="mt-3 p-3 bg-muted/50 rounded border-l-2 border-primary/30">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <p className="text-xs font-medium text-muted-foreground">
+                                                    Knowledge source:
+                                                </p>
+                                                {message.avgScore && (
+                                                    <span className="text-xs text-muted-foreground">
+                                                        Score: {message.avgScore}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                                {message.context}
+                                            </p>
+                                        </div>
+                                    )}
+                                    
                                     <p
-                                        className={`text-xs mt-1 ${
+                                        className={`text-xs mt-2 ${
                                             message.role === 'user'
                                                 ? 'text-primary-foreground/70'
                                                 : 'text-muted-foreground'
@@ -139,6 +237,19 @@ export default function Chat() {
                     </div>
                 ))}
 
+                {isSearching && (
+                    <div className="flex justify-start">
+                        <div className="bg-card text-card-foreground rounded-lg rounded-bl-none border border-border px-4 py-2 shadow-sm">
+                            <div className="flex items-center gap-2">
+                                <Search className="w-4 h-4 text-primary" />
+                                <span className="text-sm text-muted-foreground">
+                                    Searching knowledge base...
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {isLoading && (
                     <div className="flex justify-start">
                         <div className="bg-card text-card-foreground rounded-lg rounded-bl-none border border-border px-4 py-2 shadow-sm">
@@ -146,8 +257,8 @@ export default function Chat() {
                                 <Bot className="w-4 h-4 text-primary" />
                                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
                                 <span className="text-sm text-muted-foreground">
-                  Thinking...
-                </span>
+                                    Generating response...
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -162,7 +273,7 @@ export default function Chat() {
                         type="text"
                         value={input}
                         onChange={e => setInput(e.target.value)}
-                        placeholder="Type your message..."
+                        placeholder="Ask about Kenyan education, curriculum, or other topics in my knowledge base..."
                         disabled={isLoading}
                         className="flex-1 border border-border rounded-lg px-4 py-2 bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-muted"
                     />
@@ -176,7 +287,7 @@ export default function Chat() {
                     </button>
                 </form>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                    Powered by MadegwaTech • LangChain
+                    This assistant only answers based on its RAG knowledge base
                 </p>
             </div>
         </div>
